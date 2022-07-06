@@ -18,7 +18,7 @@ SYMBOL := Chr(10021) ; html code for four direction arrow symbol
 FAST_SCROLL_SPEED := 75 ; higher values will increase fast scroll speed
 SLOW_SCROLL_DISTANCE := 50 ; distance until fast scroll starts
 SLOW_SCROLL_SLEEP := 50 ; higher values will decrease slow scroll speed
-SCROLL_AMOUNT := 2 ; slow and fast scroll delta (int, > 1)
+SCROLL_AMOUNT := 2 ; slow and fast scroll delta (int, > 0)
 END_SCROLL_RANGE := 450 ; end of scroll range, affects fast scroll
 INITIAL_POSITION := 0 ; initial scroll and tooltip position
 ; to fix incorrect tooltip position:
