@@ -20,12 +20,11 @@ SLOW_SCROLL_DISTANCE := 50 ; distance until fast scroll starts
 SLOW_SCROLL_SLEEP := 50 ; higher values will decrease slow scroll speed
 SCROLL_AMOUNT := 2 ; slow and fast scroll delta (int, > 0)
 END_SCROLL_RANGE := 450 ; end of scroll range, affects fast scroll
-INITIAL_POSITION := 0 ; initial scroll and tooltip position
-; to fix incorrect tooltip position:
-; 1. if the tooltip is on the far right of the screen:
-; comment out the first CoordMode command (line 40)
-; 2. if the tooltip is slightly off:
-; change INITIAL_POSITION until the tooltip is in the right place
+INITIAL_POSITION := 10 ; initial scroll and tooltip position
+
+; for connected displays
+CoordMode Mouse, Screen
+CoordMode ToolTip, Screen
 
 convertRange(value, min1, max1, min2, max2) {
     ; linear conversion of an input value
@@ -36,14 +35,11 @@ convertRange(value, min1, max1, min2, max2) {
     MButton::
         hasScrollingStarted := False
         If (A_Cursor = "IBeam") {
-            ; CoordMode makes the code work on connected displays
-            CoordMode Mouse, Screen
             MouseGetPos x1, y1
             ToolTip %SYMBOL%, x1 - INITIAL_POSITION, y1 - INITIAL_POSITION
             sleepCount := 0
             isScrolling := True
             While (isScrolling) {
-                CoordMode Mouse, Screen
                 MouseGetPos x2, y2
                 direction := 0
                 scrollDistance := 0
@@ -77,7 +73,7 @@ convertRange(value, min1, max1, min2, max2) {
                         ; map (min distance to max distance) to
                         ; (min sleep to max sleep)
                         sleepTime := convertRange(scrollDistance, 12
-                        , SLOW_SCROLL_DISTANCE, SLOW_SCROLL_SLEEP, 1)
+                            , SLOW_SCROLL_DISTANCE, SLOW_SCROLL_SLEEP, 1)
                         Sleep sleepTime
                     } Else {
                         ; fast scroll
@@ -87,7 +83,7 @@ convertRange(value, min1, max1, min2, max2) {
                             , SLOW_SCROLL_DISTANCE
                             , END_SCROLL_RANGE - SLOW_SCROLL_DISTANCE
                             , 1
-                        , FAST_SCROLL_SPEED)
+                            , FAST_SCROLL_SPEED)
                         If (++sleepCount > sleepCycle) {
                             ; sleep cycle has ended
                             sleepCount := 0
@@ -111,8 +107,7 @@ convertRange(value, min1, max1, min2, max2) {
             ; scrolls won't use smooth scroll
             ; this code simulates 4 small scrolls quickly so it's not noticable
             ; there also needs to be a sleep between scrolls or it won't work
-            ; if you don't use vscode smooth scroll, remove the next 6 lines
-            CoordMode Mouse, Screen
+            ; if you don't use vscode smooth scroll, remove the next 5 lines
             MouseGetPos x, y
             Loop 4 {
                 Sleep 1
