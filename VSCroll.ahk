@@ -11,6 +11,11 @@
 ; You should have received a copy of the GNU General Public License
 ; along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+#SingleInstance Force
+; for connected displays
+CoordMode Mouse, Screen
+CoordMode ToolTip, Screen
+
 ; modify these constants to change behaviour of script
 ; slow scroll: sleep > 1 ms, from start position to SLOW_SCROLL_DISTANCE
 ; fast scroll: sleep < 1 ms, SLOW_SCROLL_DISTANCE and above
@@ -22,13 +27,31 @@ SCROLL_AMOUNT := 2 ; slow and fast scroll delta (int, > 0)
 END_SCROLL_RANGE := 450 ; end of scroll range, affects fast scroll
 INITIAL_POSITION := 10 ; initial scroll and tooltip position
 
-; for connected displays
-CoordMode Mouse, Screen
-CoordMode ToolTip, Screen
+global isScrolling := False
+global hasScrollingStarted := False
 
 convertRange(value, min1, max1, min2, max2) {
     ; linear conversion of an input value
     Return ((value - min1) / (max1 - min1)) * (max2 - min2) + min2
+}
+
+cancelScroll(vscode:= True) {
+    isScrolling := False
+    hasScrollingStarted := False
+    ToolTip
+    ; the code below is to fix a bug with vscode smooth scrolling
+    ; without it, when you stop scrolling, the next 4 mouse wheel
+    ; scrolls won't use smooth scroll
+    ; this code simulates 4 small scrolls quickly so it's not noticable
+    ; there also needs to be a sleep between scrolls or it won't work
+    ; if you don't use vscode smooth scroll, remove the next 7 lines
+    If (vscode) {
+        MouseGetPos x, y
+        Loop 4 {
+            Sleep 1
+            PostMessage 0x20A, 1 << 16, y << 16 | x, , A
+        }
+    }
 }
 
 #IfWinActive ahk_exe Code.exe
@@ -40,6 +63,11 @@ convertRange(value, min1, max1, min2, max2) {
             sleepCount := 0
             isScrolling := True
             While (isScrolling) {
+                ; stop scrolling if not in vscode
+                If Not WinActive("ahk_exe Code.exe") {
+                    cancelScroll(False)
+                    Break
+                }
                 MouseGetPos x2, y2
                 direction := 0
                 scrollDistance := 0
@@ -99,22 +127,17 @@ convertRange(value, min1, max1, min2, max2) {
 
     MButton Up::
         If (hasScrollingStarted) {
-            isScrolling := False
-            ToolTip
-            hasScrollingStarted := False
-            ; the code below is to fix a bug with vscode smooth scrolling
-            ; without it, when you stop scrolling, the next 4 mouse wheel
-            ; scrolls won't use smooth scroll
-            ; this code simulates 4 small scrolls quickly so it's not noticable
-            ; there also needs to be a sleep between scrolls or it won't work
-            ; if you don't use vscode smooth scroll, remove the next 5 lines
-            MouseGetPos x, y
-            Loop 4 {
-                Sleep 1
-                PostMessage 0x20A, 1 << 16, y << 16 | x, , A
-            }
+            cancelScroll()
         } Else {
             hasScrollingStarted := True
+        }
+    Return
+
+    ~Lbutton::
+    ~Rbutton::
+    ~Alt::
+        If (isScrolling) {
+            cancelScroll()
         }
     Return
 #IfWinActive
